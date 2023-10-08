@@ -7,21 +7,18 @@ use App\Models\Task;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\ApiController;
 
-class TaskController extends Controller
+class TaskController extends ApiController
 {
     public function index()
     {
         $task = Task::all();
 
         if ($task->count() == 0) {
-            return response()->json([
-                "message" => "No task available"
-            ]);
+            return $this->successResponse("No task available");
         }
-        return response()->json([
-            "data" => $task
-        ]);
+        return $this->successResponse($task);
     }
 
     public function store(Request $req)
@@ -34,9 +31,7 @@ class TaskController extends Controller
             );
 
             if ($validator->fails()) {
-                return response()->json([
-                    "message" => $validator->failed()
-                ]);
+                return $this->errorResponse($validator->fails(), 422);
             }
             
             $task = new Task;
@@ -45,13 +40,9 @@ class TaskController extends Controller
             $task->status = 'Open';
             $task->save();
 
-            return response()->json([
-                "message" => "New task created succesfully."
-            ]);
+            return $this->successResponse("New task created successfully");
         } catch (Exception $e) {
-            return response()->json([
-                "error" => $e
-            ]);
+            return $this->errorResponse($e, $e->getCode());
         }
     }
 
@@ -60,13 +51,9 @@ class TaskController extends Controller
         $task = Task::where('taskId', $id)->first();
 
         if (empty($task))
-            return response()->json([
-                "message" => "Task id:" . $id . " not found"
-            ], 404);
+            return $this->successResponse("Task id:" . $id . " not found");
 
-        return response()->json([
-            "data" => $task
-        ]);
+        return $this->successResponse($task);
     }
 
     public function update(Request $req, $id)
@@ -80,13 +67,9 @@ class TaskController extends Controller
                     'updated_at' => Carbon::now()
                 ]);
 
-            return response()->json([
-                "message" => "Task Updated"
-            ], 200);
+                return $this->successResponse([], "Task Updated");
         } else {
-            return response()->json([
-                "message" => "Task id:" . $id . " not found"
-            ], 404);
+            return $this->successResponse("Task id:" . $id . " not found");
         }
     }
 
@@ -95,13 +78,9 @@ class TaskController extends Controller
         if (Task::where('taskId', $id)->exists()) {
             Task::where('taskId', $id)->delete();
 
-            return response()->json([
-                "message" => "Task deleted"
-            ], 200);
+            return $this->successResponse([], "Task deleted");
         } else {
-            return response()->json([
-                "message" => "Task id:" . $id . " not found"
-            ], 404);
+            return $this->successResponse("Task id:" . $id . " not found");
         }
     }
 
@@ -110,10 +89,7 @@ class TaskController extends Controller
         if (Task::where('taskId', $id)->exists()) {
             $task = Task::where('taskId', $id)->first();
             if ($task->status === 'Completed') {
-                return response()->json([
-                    "status" => 422,
-                    "message" => "Task is already marked as completed"
-                ], 422);
+                return $this->errorResponse("Task id: ". $id . " already marked as Completed", 422);
             }
 
             Task::where('taskId', $id)
@@ -122,13 +98,9 @@ class TaskController extends Controller
                     'updated_at' => Carbon::now()
                 ]);
 
-            return response()->json([
-                "message" => "Task marked as completed"
-            ], 200);
+                return $this->successResponse([], "Task marked as Completed");
         } else {
-            return response()->json([
-                "message" => "Task id:" . $id . " not found"
-            ], 404);
+            return $this->successResponse("Task id:" . $id . " not found");
         }
     }
 }
